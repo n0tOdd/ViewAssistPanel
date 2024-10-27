@@ -25,11 +25,17 @@ import android.content.IntentFilter
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.hardware.display.DisplayManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.AudioRecord.RECORDSTATE_RECORDING
 import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.net.wifi.WifiManager
 import android.os.*
 import android.os.PowerManager.WakeLock
 import android.view.Display
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.Observer
@@ -75,12 +81,14 @@ import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_WAKETIME
 import xyz.wallpanel.app.utils.MqttUtils.Companion.VALUE
 import xyz.wallpanel.app.utils.NotificationUtils
 import xyz.wallpanel.app.utils.ScreenUtils
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
-
+import kotlinx.coroutines.*
 
 // TODO move this to internal class within application, no longer run as service
 class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
@@ -100,6 +108,9 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
     lateinit var screenUtils: ScreenUtils
 
     private val mJpegSockets = ArrayList<AsyncHttpServerResponse>()
+    private val audioSockets = ArrayList<AsyncHttpServerResponse>()
+    private var audioStream: ByteArrayOutputStream? = null
+
     private var partialWakeLock: WakeLock? = null
     private var screenWakeLock: WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
@@ -243,6 +254,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
                 state.put(MqttUtils.STATE_CURRENT_URL, appLaunchUrl)
                 state.put(MqttUtils.STATE_SCREEN_ON, isScreenOn)
                 state.put(MqttUtils.STATE_CAMERA, configuration.cameraEnabled)
+                state.put(MqttUtils.STATE_AUDIO, configuration.audioEnabled)
                 state.put(MqttUtils.STATE_BRIGHTNESS, screenUtils.getCurrentScreenBrightness())
             } catch (e: JSONException) {
                 e.printStackTrace()
@@ -485,6 +497,18 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
             }
             Timber.i("Enabled MJPEG Endpoint")
         }
+        if (httpServer != null && configuration.audioEnabled) {
+            if(audioStream == null)
+                startAudio()
+            httpServer?.addAction("GET", "/camera/audio.wav") { _, response ->
+                Timber.i("GET Arrived (/camera/audio)")
+                response.headers.add("content-type", "audio/wav")
+                response.headers.add("transfer-encoding", "chunked") // For streaming
+                response.writeHead()
+                sendAudioStream(response)
+            }
+            Timber.i("Enabled MJPEG Endpoint")
+        }
     }
 
     private fun stopHttp() {
@@ -494,6 +518,42 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
             it.stop()
             httpServer = null
         }
+    }
+    var bufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+    var audioRecord: AudioRecord? = null
+    @SuppressLint("MissingPermission")
+    private fun startAudio() {
+        if(audioRecord == null || audioRecord?.state != AudioRecord.RECORDSTATE_RECORDING) {
+            audioRecord = AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                16000,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                bufferSize
+            )
+            audioRecord?.startRecording()
+
+            // Start sending data til HTTP-serveren her
+        }
+
+    }
+    private fun sendAudioStream(response: AsyncHttpServerResponse) {
+        val buffer = ByteArray(bufferSize)
+
+        Thread {
+            while (response.isOpen) {
+                val read = audioRecord?.read(buffer, 0, bufferSize) ?: break
+                if (read > 0) {
+                    // Send data til responsen
+                    val bb = ByteBufferList()
+                    bb.recycle()
+                    bb.add(ByteBuffer.wrap(buffer))
+                    response.write (bb)
+                     //() // Sørg for at dataene sendes umiddelbart
+                }
+            }
+            response.end() // Avslutt responsen når opptaket er ferdig
+        }.start()
     }
 
     private fun startMJPEG() {

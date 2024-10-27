@@ -16,6 +16,14 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <PreferenceCategory android:title="@string/pref_audio_title">
+
+        <SwitchPreference
+            android:defaultValue="@string/default_setting_camera_enabled"
+            android:key="pref_setting_audio_enabled"
+            android:title="@string/title_setting_audio_enabled" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/pref_camera_title">
 
         <SwitchPreference

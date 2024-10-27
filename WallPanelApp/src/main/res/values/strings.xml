@@ -33,7 +33,7 @@
     <string name="wallpanel_service_notification_title">ViewAssistPanel</string>
     <string name="wallpanel_service_notification_message">ViewAssistPanel Running…</string>
     <string name="title_settings">Settings</string>
-    <string name="title_camera_settings">Camera Settings</string>
+    <string name="title_camera_settings">Camera/Audio Settings</string>
     <string name="title_mqtt_settings">MQTT Settings</string>
     <string name="title_http_settings">HTTP Settings</string>
     <string name="title_audio_settings">Audio Settings</string>
@@ -47,6 +47,7 @@
     <string name="title_setting_app_launchurl">Dashboard URL</string>
     <string name="title_setting_app_showactivity">Show Browser Activity</string>
     <string name="title_setting_camera_enabled">Camera Enabled</string>
+
     <string name="title_setting_camera_cameraid">Selected Camera</string>
     <string name="title_setting_camera_motionenabled">Motion Detection Enabled</string>
     <string name="title_setting_camera_processinginterval">Image Processing Interval (ms)</string>
@@ -60,7 +61,7 @@
     <string name="title_setting_camera_qrcodeenabled">QR Code Reader Enabled</string>
     <string name="title_setting_camera_streaming">Camera streaming</string>
     <string name="title_setting_http_restenabled">REST API</string>
-    <string name="title_setting_audio_enabled">Audio streaming</string>
+    <string name="title_setting_audio_enabled">Audio enabled</string>
 
     <string name="title_setting_http_port">HTTP Listening Port</string>
     <string name="title_setting_http_mjpegenabled">MJPEG Camera Streaming</string>
@@ -163,11 +164,12 @@
     <string name="toast_qr_code_read">QR Code Read....</string>
     <string name="pref_camera_motion_time_summary">Amount of time before the screen dims after brightness is set (requires value above 0).</string>
     <string name="pref_rest_api_title">REST API Settings</string>
-    <string name="pref_audio_title">Audio Settings</string>
+    <string name="pref_audio_title">Audio Stream</string>
 
     <string name="pref_camera_test_title">Camera Test</string>
     <string name="pref_camera_test_button_title">Camera Test</string>
     <string name="pref_camera_title">Camera</string>
+
     <string name="pref_camera_brightness_title">Camera Activated Brightness</string>
     <string name="pref_camera_streaming_title">Camera Streaming</string>
     <string name="toast_too_dark_motion">Too dark for motion detection</string>

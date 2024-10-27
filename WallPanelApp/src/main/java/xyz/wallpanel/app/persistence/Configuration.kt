@@ -71,6 +71,11 @@ constructor(private val context: Context, private val sharedPreferences: SharedP
             sharedPreferences.edit().putBoolean(PREF_WRITE_SCREEN_PERMISSIONS, value).apply()
         }
 
+    var audioPermissionsShown: Boolean
+        get() = sharedPreferences.getBoolean(PREF_AUDIO_PERMISSIONS, false)
+        set(value) {
+            sharedPreferences.edit().putBoolean(PREF_AUDIO_PERMISSIONS, value).apply()
+        }
     var cameraPermissionsShown: Boolean
         get() = sharedPreferences.getBoolean(PREF_CAMERA_PERMISSIONS, false)
         set(value) {
@@ -180,6 +185,15 @@ constructor(private val context: Context, private val sharedPreferences: SharedP
         get() = getBoolPref(R.string.key_setting_http_mjpegenabled,
                 R.string.default_setting_http_mjpegenabled)
 
+    var audioEnabled: Boolean
+        get() = getBoolPref(R.string.key_setting_audio_enabled, R.string.default_setting_audio_enabled)
+        set(value) {
+            sharedPreferences.edit().putBoolean(context.getString(R.string.key_setting_audio_enabled), value).apply()
+        }
+
+    fun setAudioEnabled(value: Boolean?) {
+        sharedPreferences.edit().putBoolean(context.getString(R.string.key_setting_audio_enabled), value!!).apply()
+    }
     fun setHttpMJPEGEnabled(value: Boolean?) {
         sharedPreferences.edit().putBoolean(context.getString(R.string.key_setting_http_mjpegenabled), value!!).apply()
     }
@@ -406,6 +420,8 @@ constructor(private val context: Context, private val sharedPreferences: SharedP
         const val PREF_FIRST_TIME = "pref_first_time"
         const val PREF_WRITE_SCREEN_PERMISSIONS = "pref_write_screen_permissions"
         const val PREF_CAMERA_PERMISSIONS = "pref_camera_permissions"
+        const val PREF_AUDIO_PERMISSIONS = "pref_audio_permissions"
+
         const val PREF_CAMERA_ROTATE = "pref_camera_rotate"
         const val PREF_BROWSER_REFRESH_DISCONNECT = "pref_browser_refresh_disconnect"
         const val PREF_SCREEN_BRIGHTNESS = "pref_use_screen_brightness"

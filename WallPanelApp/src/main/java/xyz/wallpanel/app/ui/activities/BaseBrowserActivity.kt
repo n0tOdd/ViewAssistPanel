@@ -185,6 +185,8 @@ abstract class BaseBrowserActivity : DaggerAppCompatActivity() {
         resetInactivityTimer()
     }
 
+
+
     override fun onPause() {
         super.onPause()
         val bm = LocalBroadcastManager.getInstance(this)

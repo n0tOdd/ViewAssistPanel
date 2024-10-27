@@ -230,6 +230,8 @@ class BrowserActivityNative : BaseBrowserActivity(), LifecycleObserver, WebClien
         if (webSettings == null) {
             webSettings = webView.settings
         }
+        webSettings?.loadsImagesAutomatically = true
+        webSettings?.setNeedInitialFocus(true)
         webSettings?.javaScriptEnabled = true
         webSettings?.domStorageEnabled = true
         webSettings?.databaseEnabled = true
@@ -246,7 +248,6 @@ class BrowserActivityNative : BaseBrowserActivity(), LifecycleObserver, WebClien
         webSettings?.setRenderPriority(WebSettings.RenderPriority.HIGH)
         // webSettings?.cacheMode = WebSettings.LOAD_NO_CACHE;
         webSettings?.mediaPlaybackRequiresUserGesture = false
-
         if (userAgent.isNotEmpty()) {
             webSettings?.userAgentString = userAgent
         }
@@ -255,6 +256,8 @@ class BrowserActivityNative : BaseBrowserActivity(), LifecycleObserver, WebClien
             webSettings?.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
     }
+
+
 
     override fun complete() {
         if (binding.swipeContainer != null && binding.swipeContainer.isRefreshing && configuration.browserRefresh) {
@@ -366,6 +369,7 @@ class BrowserActivityNative : BaseBrowserActivity(), LifecycleObserver, WebClien
 
     private fun configureWebViewClient() {
         webView.webViewClient = InternalWebClient(resources = resources, callback = this, configuration)
+
     }
 
     private fun initWebPageLoad() {

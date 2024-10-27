@@ -288,10 +288,7 @@ class SettingsFragment : BaseSettingsFragment() {
                 view.let { Navigation.findNavController(it).navigate(R.id.http_action) }
                 false
             }
-            audioPreference?.onPreferenceClickListener = Preference.OnPreferenceClickListener { preference ->
-                view.let { Navigation.findNavController(it).navigate(R.id.audio_action) }
-                false
-            }
+
             sensorsPreference?.onPreferenceClickListener = Preference.OnPreferenceClickListener { preference ->
                 view.let { Navigation.findNavController(it).navigate(R.id.sensors_action) }
                 false

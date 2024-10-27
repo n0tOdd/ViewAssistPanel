@@ -40,6 +40,7 @@ import xyz.wallpanel.app.ui.activities.LiveCameraActivity
 import xyz.wallpanel.app.ui.activities.SettingsActivity
 import xyz.wallpanel.app.utils.CameraUtils
 import dagger.android.support.AndroidSupportInjection
+import kotlinx.coroutines.DEBUG_PROPERTY_NAME
 import timber.log.Timber
 
 class CameraSettingsFragment : BaseSettingsFragment() {
@@ -47,8 +48,10 @@ class CameraSettingsFragment : BaseSettingsFragment() {
     private var cameraListPreference: ListPreference? = null
     private var cameraTestPreference: Preference? = null
     private var qrCodePreference: Preference? = null
+
     private var motionDetectionPreference: Preference? = null
     private var cameraPreference: SwitchPreference? = null
+    private var audioPreference: SwitchPreference? = null
     private var faceDetectionPreference: Preference? = null
     private var fpsPreference: EditTextPreference? = null
     private var cameraStreaming: Preference? = null
@@ -104,6 +107,8 @@ class CameraSettingsFragment : BaseSettingsFragment() {
 
         fpsPreference = findPreference<EditTextPreference>(getString(R.string.key_setting_camera_fps)) as EditTextPreference
         cameraPreference = findPreference<SwitchPreference>(PREF_CAMERA_ENABLED) as SwitchPreference
+        audioPreference = findPreference<SwitchPreference>(PREF_AUDIO_ENABLED) as SwitchPreference
+
         rotatePreference = findPreference<ListPreference>(PREF_CAMERA_ROTATE) as ListPreference
         rotatePreference!!.setDefaultValue(configuration.cameraRotate)
         rotatePreference!!.value = configuration.cameraRotate.toString()
@@ -151,6 +156,8 @@ class CameraSettingsFragment : BaseSettingsFragment() {
         }
 
         cameraPreference?.isChecked = configuration.cameraEnabled
+        audioPreference?.isChecked = configuration.audioEnabled
+
         bindPreferenceSummaryToValue(fpsPreference!!)
 
         motionDetectionPreference = findPreference("button_key_motion_detection")
@@ -193,20 +200,32 @@ class CameraSettingsFragment : BaseSettingsFragment() {
         }
     }
 
+    private fun requestAudioPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !configuration.audioPermissionsShown) {
+            if (PackageManager.PERMISSION_DENIED == ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.RECORD_AUDIO))
+                configuration.audioPermissionsShown = true
+                ActivityCompat.requestPermissions(requireActivity(),
+                    arrayOf(Manifest.permission.RECORD_AUDIO),
+                    PERMISSIONS_REQUEST_MIC)
+            }
+         else {
+            configuration.cameraPermissionsShown = true
+        }
+    }
+
     private fun requestCameraPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !configuration.cameraPermissionsShown) {
             if (PackageManager.PERMISSION_DENIED == ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.CAMERA)
-                    || PackageManager.PERMISSION_DENIED == ContextCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                || PackageManager.PERMISSION_DENIED == ContextCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
                 configuration.cameraPermissionsShown = true
                 ActivityCompat.requestPermissions(requireActivity(),
-                        arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE),
-                        PERMISSIONS_REQUEST_CAMERA)
+                    arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE),
+                    PERMISSIONS_REQUEST_CAMERA)
             }
         } else {
             configuration.cameraPermissionsShown = true
         }
     }
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
             PERMISSIONS_REQUEST_CAMERA -> {
@@ -260,10 +279,19 @@ class CameraSettingsFragment : BaseSettingsFragment() {
             PREF_CAMERA_ENABLED -> {
                 val cameraEnabled = cameraPreference?.isChecked
                 cameraEnabled?.let {
-                    if(it) {
+                    if (it) {
                         requestCameraPermissions()
                     }
                     configuration.cameraEnabled = cameraEnabled
+                }
+            }
+            PREF_AUDIO_ENABLED -> {
+                val audioEnabled = audioPreference?.isChecked
+                audioEnabled?.let {
+                    if (it) {
+                        requestAudioPermissions()
+                    }
+                    configuration.audioEnabled = audioEnabled
                 }
             }
         }
@@ -271,7 +299,10 @@ class CameraSettingsFragment : BaseSettingsFragment() {
 
     companion object {
         const val PERMISSIONS_REQUEST_CAMERA = 201
+        const val PERMISSIONS_REQUEST_MIC = 200
         const val PREF_CAMERA_ROTATE = "pref_setting_camera_rotate"
         const val PREF_CAMERA_ENABLED = "pref_setting_camera_enabled"
+        const val PREF_AUDIO_ENABLED = "pref_setting_audio_enabled"
+
     }
 }

@@ -28,13 +28,13 @@ open class InternalWebClient(val resources: Resources, private val callback: Web
 
     override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
         if (currentUrl.equals(url, ignoreCase = true)) {
-            return false;
+            return false
         }
         else if (!currentUrl.equals(url, ignoreCase = true)){
-            currentUrl = url;
-            view.loadUrl(currentUrl);
+            currentUrl = url
+            view.loadUrl(currentUrl)
         }
-        return true;
+        return true
     }
 
     open fun isCurrentUrl(url: String): Boolean {
@@ -83,14 +83,15 @@ open class InternalWebClient(val resources: Resources, private val callback: Web
                     resources.getString(R.string.dialog_message_ssl_not_yet_valid)
             }
             message += resources.getString(xyz.wallpanel.app.R.string.dialog_message_ssl_continue)
-            dialogUtils.showAlertDialog(view.context,
-                resources.getString(R.string.dialog_title_ssl_error),
-                resources.getString(R.string.dialog_message_ssl_continue),
-                resources.getString(R.string.button_continue),
-                { _, _ -> handler.proceed() },
-                { _, _ -> handler.proceed() }
-            )
-        } else {
+                dialogUtils.showAlertDialog(view.context,
+                    resources.getString(R.string.dialog_title_ssl_error),
+                    resources.getString(R.string.dialog_message_ssl_continue),
+                    resources.getString(R.string.button_continue),
+                    { _, _ -> handler.proceed() },
+                    { _, _ -> handler.proceed() }
+                )
+            }
+         else {
             handler.proceed()
         }
     }
@@ -100,6 +101,54 @@ open class InternalWebClient(val resources: Resources, private val callback: Web
         super.doUpdateVisitedHistory(view, url, isReload)
     }
 
+    private  fun SetSideBarHidden(view: WebView)
+    {
+        view.evaluateJavascript("""javascript:(
+function setSidebarHidden(hidden) {
+	try {
+		var elHass = document.querySelector("body > home-assistant");
+		var elHaMain = elHass.shadowRoot.querySelector("home-assistant-main");
+
+		hidden = true;
+		const panelLovelace = elHaMain.shadowRoot.querySelector("ha-panel-lovelace");
+		if (!panelLovelace) {
+			return;
+		}
+		const huiRoot = panelLovelace.shadowRoot.querySelector("hui-root");
+		if (huiRoot) {
+			const menuButton = huiRoot.shadowRoot.querySelector("ha-menu-button");
+			if (menuButton) {
+				if (hidden) {
+					menuButton.style.display = "none";
+				}
+				else {
+					menuButton.style.removeProperty("display");
+				}
+			}
+		}
+	}
+	catch (e) {
+		console.log(e);
+	}
+
+	try {
+		const aside = elHaMain.shadowRoot.querySelector("ha-drawer").shadowRoot.querySelector("aside");
+		aside.style.display = (hidden ? "none" : "");
+		if (hidden) {
+			elHaMain.style.setProperty("--mdc-drawer-width", "env(safe-area-inset-left)");
+		}
+		else {
+			elHaMain.style.removeProperty("--mdc-drawer-width");
+		}
+		window.dispatchEvent(new Event('resize'));
+	}
+	catch (e) {
+		console.log(e);
+	}
+})()""")
+    }
+//Todo her kan du legge til en javascript injector for å enable
+//Skjuling av top og sidebar i home assistant uten å trenge browsermod
     override fun onPageFinished(view: WebView, url: String) {
         if (callback.isConnected) {
             callback.stopReloadDelay()
@@ -107,6 +156,7 @@ open class InternalWebClient(val resources: Resources, private val callback: Web
         if (isCurrentUrl(url)) {
             pageLoaded = true
         }
+        SetSideBarHidden(view)
     }
 
     @TargetApi(Build.VERSION_CODES.O)

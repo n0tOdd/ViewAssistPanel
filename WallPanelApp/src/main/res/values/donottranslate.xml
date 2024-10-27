@@ -68,7 +68,6 @@
     <string name="key_setting_directions">setting_directions</string>
     <string name="default_setting_camera_qrcodeenabled">false</string>
     <string name="key_setting_http_restenabled">setting_http_enabled</string>
-    <string name="key_setting_audio_enabled">setting_audio_enabled</string>
 
     <string name="default_setting_camera_facewake">false</string>
     <string name="key_setting_camera_qrcodeenabled">setting_camera_qrcodeenabled</string>
@@ -91,11 +90,15 @@
     <string name="default_setting_camera_cameraid">0</string>
     <string name="key_setting_camera_motionenabled">setting_camera_motionenabled</string>
     <string name="default_setting_camera_enabled">false</string>
+    <string name="default_setting_audio_enabled">false</string>
+
     <string name="default_gecko_enabled">false</string>
     <string name="setting_camera_cameraid">setting_camera_camera_id_value</string>
     <string name="key_setting_camera_cameraid">key_setting_camera_cameraid</string>
     <string name="default_setting_app_showactivity">false</string>
     <string name="key_setting_camera_enabled">setting_camera_enabled</string>
+    <string name="key_setting_audio_enabled">setting_audio_enabled</string>
+
     <string name="key_setting_app_showactivity">setting_app_showactivity</string>
     <string name="key_setting_use_gecko">setting_use_gecko</string>
     <string name="default_setting_app_preventsleep">false</string>

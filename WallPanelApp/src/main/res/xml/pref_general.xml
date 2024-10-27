@@ -216,9 +216,6 @@
             android:key="button_key_http"
             android:title="@string/title_http_settings"/>
 
-        <Preference
-            android:key="button_key_audio"
-            android:title="@string/title_audio_settings"/>
 
         <Preference
             android:key="button_key_camera"

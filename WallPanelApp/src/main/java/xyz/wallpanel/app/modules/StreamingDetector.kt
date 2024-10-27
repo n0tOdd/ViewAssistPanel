@@ -33,7 +33,7 @@ class StreamingDetector private constructor() : Detector<Stream>() {
         } else {
             val sparseArray = SparseArray<Stream>()
             val byteBuffer = frame.grayscaleImageData
-            val bytes = byteBuffer.array()
+            val bytes = byteBuffer?.array()
             val w = frame.metadata.width
             val h = frame.metadata.height
             val stream = Stream()
