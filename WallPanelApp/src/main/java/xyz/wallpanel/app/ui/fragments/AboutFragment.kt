@@ -20,17 +20,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
-import xyz.wallpanel.app.R
-import xyz.wallpanel.app.ui.activities.SettingsActivity
-import xyz.wallpanel.app.databinding.FragmentAboutBinding
-
 import timber.log.Timber
+import xyz.wallpanel.app.R
+import xyz.wallpanel.app.databinding.FragmentAboutBinding
+import xyz.wallpanel.app.ui.activities.SettingsActivity
 
 class AboutFragment : Fragment() {
 

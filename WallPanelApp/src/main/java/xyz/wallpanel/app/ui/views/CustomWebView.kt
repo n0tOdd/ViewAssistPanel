@@ -60,6 +60,7 @@ class CustomWebView @JvmOverloads constructor(
         settings.setSupportZoom(true)
         settings.loadWithOverviewMode = true
         settings.useWideViewPort = true
+        settings.loadsImagesAutomatically = true
         settings.pluginState = WebSettings.PluginState.ON
         settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         // settings.cacheMode = WebSettings.LOAD_NO_CACHE;

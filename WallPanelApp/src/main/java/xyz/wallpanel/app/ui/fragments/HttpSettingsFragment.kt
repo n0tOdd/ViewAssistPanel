@@ -45,6 +45,7 @@ class HttpSettingsFragment : BaseSettingsFragment() {
     override fun onAttach(context: Context) {
         AndroidSupportInjection.inject(this)
         super.onAttach(context)
+
         setHasOptionsMenu(true)
     }
 

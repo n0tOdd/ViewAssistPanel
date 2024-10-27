@@ -70,10 +70,14 @@ class SettingsFragment : BaseSettingsFragment() {
     private var cameraPreference: Preference? = null
     private var mqttPreference: Preference? = null
     private var httpPreference: Preference? = null
+    private var audioPreference: Preference? = null
     private var sensorsPreference: Preference? = null
     private var aboutPreference: Preference? = null
     private var brightnessPreference: Preference? = null
     private var browserRefreshPreference: SwitchPreference? = null
+    private var browserBackPreference: SwitchPreference? = null
+    private var exitOnBackPreference: SwitchPreference? = null
+
 
     private var clockSaverPreference: SwitchPreference? = null
     private var inactivityPreference: ListPreference? = null
@@ -244,6 +248,8 @@ class SettingsFragment : BaseSettingsFragment() {
         cameraPreference = findPreference("button_key_camera")
         mqttPreference = findPreference("button_key_mqtt")
         httpPreference = findPreference("button_key_http")
+        audioPreference = findPreference("button_key_audio")
+
         sensorsPreference = findPreference("button_key_sensors")
         aboutPreference = findPreference("button_key_about")
         brightnessPreference = findPreference("button_key_brightness")
@@ -280,6 +286,10 @@ class SettingsFragment : BaseSettingsFragment() {
             }
             httpPreference?.onPreferenceClickListener = Preference.OnPreferenceClickListener { preference ->
                 view.let { Navigation.findNavController(it).navigate(R.id.http_action) }
+                false
+            }
+            audioPreference?.onPreferenceClickListener = Preference.OnPreferenceClickListener { preference ->
+                view.let { Navigation.findNavController(it).navigate(R.id.audio_action) }
                 false
             }
             sensorsPreference?.onPreferenceClickListener = Preference.OnPreferenceClickListener { preference ->

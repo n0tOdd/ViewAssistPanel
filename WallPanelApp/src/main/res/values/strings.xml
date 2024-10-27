@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2022 WallPanel
+  ~ Copyright (c) 2022 ViewAssistPanel
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -29,13 +29,15 @@
         <item>"Legacy"</item>
     </string-array>
 
-    <string name="app_name">WallPanel</string>
-    <string name="wallpanel_service_notification_title">WallPanel</string>
-    <string name="wallpanel_service_notification_message">WallPanel Running…</string>
+    <string name="app_name">ViewAssistPanel</string>
+    <string name="wallpanel_service_notification_title">ViewAssistPanel</string>
+    <string name="wallpanel_service_notification_message">ViewAssistPanel Running…</string>
     <string name="title_settings">Settings</string>
     <string name="title_camera_settings">Camera Settings</string>
     <string name="title_mqtt_settings">MQTT Settings</string>
     <string name="title_http_settings">HTTP Settings</string>
+    <string name="title_audio_settings">Audio Settings</string>
+
     <string name="title_motion_settings">Motion Detection Settings</string>
     <string name="title_facedetection_settings">Face Detection Settings</string>
     <string name="title_qrcode_settings">QR Code Settings</string>
@@ -58,6 +60,8 @@
     <string name="title_setting_camera_qrcodeenabled">QR Code Reader Enabled</string>
     <string name="title_setting_camera_streaming">Camera streaming</string>
     <string name="title_setting_http_restenabled">REST API</string>
+    <string name="title_setting_audio_enabled">Audio streaming</string>
+
     <string name="title_setting_http_port">HTTP Listening Port</string>
     <string name="title_setting_http_mjpegenabled">MJPEG Camera Streaming</string>
     <string name="title_setting_http_mjpegmaxstreams">MJPEG Camera Max Streams</string>
@@ -90,7 +94,7 @@
 
     <string name="text_seconds">%1$s seconds</string>
     <string name="title_camera_test">Camera Test</string>
-    <string name="title_welcome_to_wallpanel">Welcome to WallPanel!</string>
+    <string name="title_welcome_to_wallpanel">Welcome to ViewAssistPanel!</string>
     <string name="text_wallpanel_description">Configure the application to have a different \'Dashboard URL\' in the settings.\n\nThe dashboard can be any web page or home automation website. \n\nAfter you launch the dashboard, you may return to the settings by using the device back button.</string>
     <string name="button_launch_settings">Launch Settings</string>
     <string name="toast_camera_permission_granted">Camera permission granted.</string>
@@ -115,7 +119,7 @@
     <string name="title_hardware_acceleration">Hardware Acceleration</string>
     <string name="summary_hardware_acceleration">Works on some devices to speed webpage and camera rendering.</string>
 
-    <string name="mail_to_subject_text">WallPanel Feedback</string>
+    <string name="mail_to_subject_text">ViewAssistPanel Feedback</string>
     <string name="mail_subject_text">Send Feedback:</string>
 
     <string name="an_open_source_project_text">An Open Source Project maintained by wonderful people</string>
@@ -137,8 +141,11 @@
     <string name="pref_motion_leniency_description">The maximum tolerance of the difference between images. A lower tolerance means motion is more sensitive (1 – 20).</string>
     <string name="pref_motion_luma_description">Minimum brightness level to detect motion. No motion will be detected if brightness falls below this value (1 – 1000).</string>
     <string name="pref_mjpeg_streaming_description">Use the device camera as a live MJPEG stream. Connect to the stream using the device IP address, HTTP Port, and end point: http://%s:2971/camera/stream</string>
+
     <string name="pref_mjpeg_streaming_title">MJPEG Streaming</string>
     <string name="pref_http_description">Control the application over HTTP using REST API calls. To find out which commands work with, review the help documentation.</string>
+    <string name="pref_audio_description">Use the device microphone as a live audio stream. Connect to the stream using the device IP address, HTTP Port, and end point: http://%s:2971/camera/audio</string>
+
     <string name="pref_launchurl_summary">Enter the fully qualified URL for your home automation dashboard or path to file on the local device (requires storage access permission).</string>
     <string name="pref_show_browser_activity_summary">Display browser loading progress.</string>
     <string name="pref_prevent_sleep_summary">When active, keeps the screen on.</string>
@@ -156,6 +163,8 @@
     <string name="toast_qr_code_read">QR Code Read....</string>
     <string name="pref_camera_motion_time_summary">Amount of time before the screen dims after brightness is set (requires value above 0).</string>
     <string name="pref_rest_api_title">REST API Settings</string>
+    <string name="pref_audio_title">Audio Settings</string>
+
     <string name="pref_camera_test_title">Camera Test</string>
     <string name="pref_camera_test_button_title">Camera Test</string>
     <string name="pref_camera_title">Camera</string>
@@ -176,8 +185,8 @@
 
     <string name="error_mqtt_connection">The MQTT client connection wasn\'t established or was closed unexpectedly. Will try to reconnect.</string>
     <string name="error_mqtt_subscription">Couldn\'t subscribe to the MQTT topics, check the MQTT broker settings or your connection.</string>
-    <string name="text_android_channel_name">WallPanel Running</string>
-    <string name="text_android_channel_description">WallPanel Running…</string>
+    <string name="text_android_channel_name">ViewAssistPanel Running</string>
+    <string name="text_android_channel_description">ViewAssistPanel Running…</string>
     <string name="text_camera_front">Front</string>
     <string name="text_camera_back">Back</string>
     <string name="toast_camera_source_error">Could not start camera source, you may want to try again.</string>
@@ -212,6 +221,10 @@
     <string name="toast_empty_url">Url is empty…</string>
     <string name="pref_browser_refresh_summary">When active, allows you to pull down on the browser window to refresh the page.</string>
     <string name="pref_browser_refresh_title">Browser Refresh</string>
+    <string name="pref_browser_back_summary">When active, allows you to go one page history back on back button.</string>
+    <string name="pref_browser_back_title">Browser Back</string>
+    <string name="pref_exit_on_back_summary">When active, allows you to exit on back button.</string>
+    <string name="pref_exit_on_back_title">Exit on Back Button</string>
     <string name="error_mqtt_exception">There was an error initializing the MQTT client, please check your settings.</string>
 
     <string name="preference_title_screen">Display Settings</string>

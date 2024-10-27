@@ -1,0 +1,72 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "xyz.wallpanel.app",
+  "variantName": "prodRelease",
+  "elements": [
+    {
+      "type": "UNIVERSAL",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 12000,
+      "versionName": "0.12.0 Build 0",
+      "outputFile": "WallPanelApp-prod-universal-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "arm64-v8a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 12000,
+      "versionName": "0.12.0 Build 0",
+      "outputFile": "WallPanelApp-prod-arm64-v8a-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "armeabi-v7a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 12000,
+      "versionName": "0.12.0 Build 0",
+      "outputFile": "WallPanelApp-prod-armeabi-v7a-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "x86_64"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 12000,
+      "versionName": "0.12.0 Build 0",
+      "outputFile": "WallPanelApp-prod-x86_64-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "x86"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 12000,
+      "versionName": "0.12.0 Build 0",
+      "outputFile": "WallPanelApp-prod-x86-release.apk"
+    }
+  ],
+  "elementType": "File"
+}

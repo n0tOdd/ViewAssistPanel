@@ -68,6 +68,8 @@
     <string name="key_setting_directions">setting_directions</string>
     <string name="default_setting_camera_qrcodeenabled">false</string>
     <string name="key_setting_http_restenabled">setting_http_enabled</string>
+    <string name="key_setting_audio_enabled">setting_audio_enabled</string>
+
     <string name="default_setting_camera_facewake">false</string>
     <string name="key_setting_camera_qrcodeenabled">setting_camera_qrcodeenabled</string>
     <string name="default_setting_camera_faceenabled">false</string>
@@ -130,6 +132,9 @@
 
     <string name="key_pref_browser_refresh">browser_refresh</string>
     <string name="default_browser_refresh">true</string>
+    <string name="key_pref_browser_back">browser_back</string>
+    <string name="key_pref_exit_on_back">exit_on_back</string>
+
 
     <string name="key_screensaver_inactivity_time">screensaver_inactivity_time</string>
 
@@ -167,6 +172,8 @@
         <item>@string/title_mqtt_settings</item>
         <item>@string/title_qrcode_settings</item>
         <item>@string/title_http_settings</item>
+        <item>@string/title_audio_settings</item>
+
     </string-array>
 
     <string-array name="zoom_level_names">
