@@ -1,5 +1,6 @@
 package xyz.wallpanel.app.utils
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.res.Resources
 import android.graphics.Bitmap
@@ -70,6 +71,7 @@ open class InternalWebClient(val resources: Resources, private val callback: Web
         }
     }
 
+    @SuppressLint("SuspiciousIndentation")
     override fun onReceivedSslError(
         view: WebView,
         handler: SslErrorHandler,
