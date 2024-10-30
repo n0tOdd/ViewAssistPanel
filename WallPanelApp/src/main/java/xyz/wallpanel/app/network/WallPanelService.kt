@@ -27,15 +27,14 @@ import android.content.pm.PackageManager
 import android.hardware.display.DisplayManager
 import android.media.AudioFormat
 import android.media.AudioRecord
-import android.media.AudioRecord.RECORDSTATE_RECORDING
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.*
 import android.os.PowerManager.WakeLock
 import android.view.Display
-import androidx.annotation.RequiresApi
-import androidx.annotation.RequiresPermission
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.Observer
@@ -76,6 +75,8 @@ import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_SPEAK
 import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_STATE
 import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_URL
 import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_VOLUME
+import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_STARTAPPLICATION
+
 import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_WAKE
 import xyz.wallpanel.app.utils.MqttUtils.Companion.COMMAND_WAKETIME
 import xyz.wallpanel.app.utils.MqttUtils.Companion.VALUE
@@ -83,13 +84,14 @@ import xyz.wallpanel.app.utils.NotificationUtils
 import xyz.wallpanel.app.utils.ScreenUtils
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlinx.coroutines.*
-
+import net.sourceforge.lame.lowlevel.LameEncoder
+import kotlin.experimental.and
+import net.sourceforge.lame.mp3.Lame
 // TODO move this to internal class within application, no longer run as service
 class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
 
@@ -108,7 +110,6 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
     lateinit var screenUtils: ScreenUtils
 
     private val mJpegSockets = ArrayList<AsyncHttpServerResponse>()
-    private val audioSockets = ArrayList<AsyncHttpServerResponse>()
     private var audioStream: ByteArrayOutputStream? = null
 
     private var partialWakeLock: WakeLock? = null
@@ -162,7 +163,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
         startForeground()
 
         // prepare the lock types we may use
-        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
 
         //noinspection deprecation
         partialWakeLock = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
@@ -178,14 +179,14 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
         }
 
         // wifi lock
-        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
         wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL, "wallPanel:wifiLock")
 
         // Some Amazon devices are not seeing this permission so we are trying to check
         val permission = "android.permission.DISABLE_KEYGUARD"
         val checkSelfPermission = ContextCompat.checkSelfPermission(this@WallPanelService, permission)
         if (checkSelfPermission == PackageManager.PERMISSION_GRANTED) {
-            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
             keyguardLock = keyguardManager.newKeyguardLock("ALARM_KEYBOARD_LOCK_TAG")
             keyguardLock!!.disableKeyguard()
         }
@@ -234,11 +235,11 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
     private val isScreenOn: Boolean
         get() {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH){
-                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-                return powerManager.isScreenOn
+                val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+                return powerManager.isInteractive
             }
             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH){
-                val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+                val displayManager = getSystemService(DISPLAY_SERVICE) as DisplayManager
                 for (display in displayManager.displays){
                     return display.state != Display.STATE_OFF
                 }
@@ -459,7 +460,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
                 response.send("")
             }
             httpServer?.listen(AsyncServer.getDefault(), configuration.httpPort)
-            Timber.i("Started HTTP server on " + configuration.httpPort)
+            Timber.i("%s%s", "Started HTTP server on ", configuration.httpPort.toString())
         }
 
         if (httpServer != null && configuration.httpRestEnabled) {
@@ -498,69 +499,163 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
             Timber.i("Enabled MJPEG Endpoint")
         }
         if (httpServer != null && configuration.audioEnabled) {
-            if(audioStream == null)
-                startAudio()
-            httpServer?.addAction("GET", "/camera/audio.wav") { _, response ->
+            startAudio()
+            httpServer?.addAction("GET", "/camera/audio") { _, response ->
                 Timber.i("GET Arrived (/camera/audio)")
-                response.headers.add("content-type", "audio/wav")
-                response.headers.add("transfer-encoding", "chunked") // For streaming
-                response.writeHead()
+               // response.setContentType("audio/L16; rate=16384; channels=1")
+               // response.headers.add("transfer-encoding", "chunked") // For streaming
                 sendAudioStream(response)
             }
             Timber.i("Enabled MJPEG Endpoint")
         }
     }
 
-    private fun stopHttp() {
-        Timber.d("stopHttp")
-        httpServer?.let {
-            stopMJPEG()
-            it.stop()
-            httpServer = null
+
+
+    var bufferSize = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+    private var audioRecord: AudioRecord? = null
+    private  fun stopAudio(){
+        if(audioRecord != null &&  audioRecord?.state != AudioRecord.RECORDSTATE_STOPPED)
+        {
+            audioRecord?.stop()
+            audioRecord?.release()
+            audioRecord= null
         }
     }
-    var bufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-    var audioRecord: AudioRecord? = null
     @SuppressLint("MissingPermission")
     private fun startAudio() {
         if(audioRecord == null || audioRecord?.state != AudioRecord.RECORDSTATE_RECORDING) {
             audioRecord = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                16000,
+                MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize
+                bufferSize * 100
             )
+            if(audioRecord?.state != AudioRecord.STATE_INITIALIZED){
+                Timber.i("Failed to initialize audio recorder")
+                return
+            }
             audioRecord?.startRecording()
 
             // Start sending data til HTTP-serveren her
         }
 
     }
-    private fun sendAudioStream(response: AsyncHttpServerResponse) {
-        val buffer = ByteArray(bufferSize)
+    private fun createWavHeader(sampleRate: Int, channels: Int, bufferSize: Int): ByteArray {
+        val headerSize = 44
+        val byteRate = sampleRate * channels * 2 // 2 bytes per sample (16-bit)
+        val blockAlign = channels * 2
+        val dataSize = bufferSize * 10 // Estimert datastørrelse
+        val header = ByteArray(headerSize)
 
+        // RIFF chunk
+        header[0] = 'R'.toByte()
+        header[1] = 'I'.toByte()
+        header[2] = 'F'.toByte()
+        header[3] = 'F'.toByte()
+        writeInt(header, 4, 36 + dataSize) // Chunk size
+
+        // WAVE format
+        header[8] = 'W'.toByte()
+        header[9] = 'A'.toByte()
+        header[10] = 'V'.toByte()
+        header[11] = 'E'.toByte()
+
+        // fmt subchunk
+        header[12] = 'f'.toByte()
+        header[13] = 'm'.toByte()
+        header[14] = 't'.toByte()
+        header[15] = ' '.toByte()
+        writeInt(header, 16, 16) // Subchunk size if(audioStream == null)
+
+        writeShort(header, 20, 1.toShort()) // Audio format (PCM)
+        writeShort(header, 22, channels.toShort()) // Number of channels
+        writeInt(header, 24, sampleRate) // Sample rate
+        writeInt(header, 28, byteRate) // Byte rate
+        writeShort(header, 32, blockAlign.toShort()) // Block align
+        writeShort(header, 34, 16.toShort()) // Bits per sample
+
+        // data subchunk
+        header[36] = 'd'.toByte()
+        header[37] = 'a'.toByte()
+        header[38] = 't'.toByte()
+        header[39] = 'a'.toByte()
+        writeInt(header, 40, dataSize) // Subchunk size
+
+        return header
+    }
+
+    // Hjelpefunksjoner for å skrive data til byte-array
+    private fun writeInt(buffer: ByteArray, offset: Int, value: Int) {
+        buffer[offset] = (value and 0xff).toByte()
+        buffer[offset + 1] = (value shr 8 and 0xff).toByte()
+        buffer[offset + 2] = (value shr 16 and 0xff).toByte()
+        buffer[offset + 3] = (value shr 24 and 0xff).toByte()
+    }
+
+    private fun writeShort(buffer: ByteArray, offset: Int, value: Short) {
+        buffer[offset] = (value and 0xff).toByte()
+        buffer[offset + 1] = (value.toInt() shr 8 and 0xff).toByte()
+    }
+
+    private fun sendAudioStream(response: AsyncHttpServerResponse) {
+
+        val wavHeader = createWavHeader(44100, 1, bufferSize)
+        response.setContentType("audio/wav; rate=44100; channels=1")//
+        response.headers.add("content-type", "audio/wav")
+        response.headers.add("transfer-encoding", "chunked")
+        response.writeHead()
+        val bb = ByteBufferList()
+        bb.recycle()
+        bb.add((ByteBuffer.wrap(wavHeader)))
+        response.write(bb) // Send WAV-header
         Thread {
-            while (response.isOpen) {
-                val read = audioRecord?.read(buffer, 0, bufferSize) ?: break
-                if (read > 0) {
-                    // Send data til responsen
-                    val bb = ByteBufferList()
-                    bb.recycle()
-                    bb.add(ByteBuffer.wrap(buffer))
-                    response.write (bb)
-                     //() // Sørg for at dataene sendes umiddelbart
+            var encoder: LameEncoder
+            Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
+            while (audioRecord!!.recordingState == AudioRecord.RECORDSTATE_RECORDING && response.isOpen) {
+                try {
+                    Timber.i("writing audio response")
+                    val buffer = ByteArray(bufferSize)
+                    val read = audioRecord?.read(buffer, 0, bufferSize) ?: break
+
+                    if (read == AudioRecord.ERROR_BAD_VALUE || read == AudioRecord.ERROR_INVALID_OPERATION)
+                        break
+                    if(read == -1) break
+                    if (read > 0) {
+                        val ba = ByteBufferList()
+                        ba.recycle()
+                        ba.add((java.nio.ByteBuffer.wrap(buffer)))
+                        response.write(ba)
+
+                    }
+                }
+                catch (ex: Exception)
+                {
+                    Timber.i(ex)
                 }
             }
             response.end() // Avslutt responsen når opptaket er ferdig
         }.start()
+
+    }
+
+
+    private fun stopHttp() {
+        Timber.d("stopHttp")
+        httpServer?.let {
+            stopMJPEG()
+            stopAudio()
+            it.stop()
+            httpServer = null
+        }
     }
 
     private fun startMJPEG() {
         Timber.d("startMJPEG")
         cameraReader?.let {
             it.getJpeg().observe(this, Observer { jpeg ->
-                if (mJpegSockets.size > 0 && jpeg != null) {
+                if (mJpegSockets.isNotEmpty() && jpeg != null) {
                     var i = 0
                     while (i < mJpegSockets.size) {
                         val s = mJpegSockets[i]
@@ -593,7 +688,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
             if (timeout >= 0) {
                 wakeLock.acquire(timeout)
             } else {
-                wakeLock.acquire()
+                wakeLock.acquire(10*60*1000L /*10 minutes*/)
             }
         }
     }
@@ -655,7 +750,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
             response.send("Max streams exceeded")
             response.end()
         }
-        Timber.i("MJPEG Session Count is " + mJpegSockets.size)
+        Timber.i("%s%s", "MJPEG Session Count is ", mJpegSockets.size)
     }
 
     private fun processCommand(commandJson: JSONObject): Boolean {
@@ -668,9 +763,13 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
                 } else if (enableCamera) {
                     restartCamera()
                 }
+
             }
             if (commandJson.has(COMMAND_URL)) {
                 browseUrl(commandJson.getString(COMMAND_URL))
+            }
+            if (commandJson.has(COMMAND_STARTAPPLICATION)) {
+                startNewActivity(commandJson.getString(COMMAND_URL))
             }
             if (commandJson.has(COMMAND_RELAUNCH)) {
                 if (commandJson.getBoolean(COMMAND_RELAUNCH)) {
@@ -698,6 +797,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
             if (commandJson.has(COMMAND_RELOAD)) {
                 if (commandJson.getBoolean(COMMAND_RELOAD)) {
                     reloadPage()
+
                 }
             }
             if (commandJson.has(COMMAND_CLEAR_CACHE)) {
@@ -721,7 +821,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
                 setVolume((commandJson.getInt(COMMAND_VOLUME).toFloat() / 100))
             }
         } catch (ex: JSONException) {
-            Timber.e("Invalid JSON passed as a command: " + commandJson.toString())
+            Timber.e("%s%s", "Invalid JSON passed as a command: ", commandJson.toString())
             return false
         }
 
@@ -738,6 +838,18 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
         }
     }
 
+
+    ///Start a new android application if package name exists
+    private fun  startNewActivity(packageName: String ) {
+        var intent = getPackageManager().getLaunchIntentForPackage(packageName)
+        if (intent == null) {
+            // Bring user to the market or let them choose an app?
+            intent = Intent(Intent.ACTION_VIEW)
+            intent.setData(Uri.parse("market://details?id=$packageName"))
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+    }
     private fun browseUrl(url: String) {
         Timber.d("browseUrl")
         val intent = Intent(BROADCAST_ACTION_LOAD_URL)
@@ -759,7 +871,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
         try {
             audioPlayer!!.setDataSource(audioUrl)
         } catch (e: IOException) {
-            Timber.e("audioPlayer: An error occurred while preparing audio (" + e.message + ")")
+            Timber.e("%s%s%s", "audioPlayer: An error occurred while preparing audio (" , e.message,  ")")
             audioPlayerBusy = false
             audioPlayer?.reset()
             return
@@ -868,7 +980,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
         if (!faceDetected) {
             val data = JSONObject()
             try {
-                data.put(MqttUtils.VALUE, true)
+                data.put(VALUE, true)
             } catch (ex: JSONException) {
                 ex.printStackTrace()
             }
@@ -884,7 +996,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
         val deviceJson = JSONObject()
         deviceJson.put("identifiers", listOf("wallpanel_${configuration.mqttClientId}"))
         deviceJson.put("name", configuration.mqttDiscoveryDeviceName)
-        deviceJson.put("manufacturer", Build.MANUFACTURER.toLowerCase().capitalize())
+        deviceJson.put("manufacturer", Build.MANUFACTURER.toString().lowercase().capitalize())
         deviceJson.put("model", Build.MODEL)
         return deviceJson
     }
@@ -892,7 +1004,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
     private fun getSensorDiscoveryDef(displayName: String, stateTopic: String, deviceClass: String?, unit: String?, sensorId: String): JSONObject {
         val discoveryDef = JSONObject()
         if (configuration.mqttLegacyDiscoveryEntities) {
-            discoveryDef.put("name", "${configuration.mqttDiscoveryDeviceName} ${displayName}")
+            discoveryDef.put("name", "${configuration.mqttDiscoveryDeviceName} $displayName")
         } else {
             discoveryDef.put("name", displayName)
         }
@@ -927,7 +1039,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
     private fun getBinarySensorDiscoveryDef(displayName: String, stateTopic: String, fieldName: String, deviceClass: String, sensorId: String): JSONObject {
         val discoveryDef = JSONObject()
         if (configuration.mqttLegacyDiscoveryEntities) {
-            discoveryDef.put("name", "${configuration.mqttDiscoveryDeviceName} ${displayName}")
+            discoveryDef.put("name", "${configuration.mqttDiscoveryDeviceName} $displayName")
         } else {
             discoveryDef.put("name", displayName)
         }
@@ -1036,7 +1148,7 @@ class WallPanelService : LifecycleService(), MQTTModule.MQTTListener {
                 ex.printStackTrace()
             }
             faceDetected = false
-            publishCommand(MqttUtils.COMMAND_SENSOR_FACE, data)
+            publishCommand(COMMAND_SENSOR_FACE, data)
         }
     }
 

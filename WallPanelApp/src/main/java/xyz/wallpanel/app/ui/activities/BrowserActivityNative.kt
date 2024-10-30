@@ -221,7 +221,7 @@ class BrowserActivityNative : BaseBrowserActivity(), LifecycleObserver, WebClien
     }
 
     override fun reload() {
-        webView.reload()
+        webView.loadUrl(webView.url.toString())
     }
 
     @SuppressLint("SetJavaScriptEnabled")

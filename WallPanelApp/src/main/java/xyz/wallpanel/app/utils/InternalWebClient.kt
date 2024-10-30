@@ -5,6 +5,8 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.net.http.SslError
 import android.os.Build
+import android.os.SystemClock
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.SslErrorHandler
@@ -14,8 +16,11 @@ import timber.log.Timber
 import xyz.wallpanel.app.R
 import xyz.wallpanel.app.persistence.Configuration
 import xyz.wallpanel.app.ui.views.WebClientCallback
+import java.lang.StrictMath.random
 import java.util.*
 import javax.inject.Inject
+import kotlin.math.nextUp
+import kotlin.math.pow
 
 open class InternalWebClient(val resources: Resources, private val callback: WebClientCallback, val configuration: Configuration) :
     WebViewClient() {
@@ -101,52 +106,8 @@ open class InternalWebClient(val resources: Resources, private val callback: Web
         super.doUpdateVisitedHistory(view, url, isReload)
     }
 
-    private  fun SetSideBarHidden(view: WebView)
-    {
-        view.evaluateJavascript("""javascript:(
-function setSidebarHidden(hidden) {
-	try {
-		var elHass = document.querySelector("body > home-assistant");
-		var elHaMain = elHass.shadowRoot.querySelector("home-assistant-main");
 
-		hidden = true;
-		const panelLovelace = elHaMain.shadowRoot.querySelector("ha-panel-lovelace");
-		if (!panelLovelace) {
-			return;
-		}
-		const huiRoot = panelLovelace.shadowRoot.querySelector("hui-root");
-		if (huiRoot) {
-			const menuButton = huiRoot.shadowRoot.querySelector("ha-menu-button");
-			if (menuButton) {
-				if (hidden) {
-					menuButton.style.display = "none";
-				}
-				else {
-					menuButton.style.removeProperty("display");
-				}
-			}
-		}
-	}
-	catch (e) {
-		console.log(e);
-	}
 
-	try {
-		const aside = elHaMain.shadowRoot.querySelector("ha-drawer").shadowRoot.querySelector("aside");
-		aside.style.display = (hidden ? "none" : "");
-		if (hidden) {
-			elHaMain.style.setProperty("--mdc-drawer-width", "env(safe-area-inset-left)");
-		}
-		else {
-			elHaMain.style.removeProperty("--mdc-drawer-width");
-		}
-		window.dispatchEvent(new Event('resize'));
-	}
-	catch (e) {
-		console.log(e);
-	}
-})()""")
-    }
 //Todo her kan du legge til en javascript injector for å enable
 //Skjuling av top og sidebar i home assistant uten å trenge browsermod
     override fun onPageFinished(view: WebView, url: String) {
@@ -156,7 +117,40 @@ function setSidebarHidden(hidden) {
         if (isCurrentUrl(url)) {
             pageLoaded = true
         }
-        SetSideBarHidden(view)
+    var X_MAX = 412;
+    var Y_MAX = 50;
+    var x = random().pow(X_MAX).toFloat();
+    var y = random().pow(Y_MAX).toFloat();
+
+//        String htmlEventJs = "var ev = document.createEvent(\"HTMLEvents\"); " +
+//                "var el = document.elementFromPoint(%d,%d); " +
+//                "ev.initEvent('click',true,true);" +
+//                " el.dispatchEvent(ev);";
+//        htmlEventJs = String.format(htmlEventJs, x, y);
+//        webView.loadUrl("javascript:" + htmlEventJs);
+
+    var downTime = SystemClock.uptimeMillis()
+    var eventTime = SystemClock.uptimeMillis() + random().nextUp().toLong()
+    // List of meta states found here: developer.android.com/reference/android/view/KeyEvent.html#getMetaState()
+    var metaState = 0
+    var me = MotionEvent.obtain(
+            downTime,
+    eventTime,
+    MotionEvent.ACTION_DOWN,
+    x,
+    y,
+    metaState
+    );
+    view.dispatchTouchEvent(me)
+    me = MotionEvent.obtain(
+        downTime,
+        eventTime,
+        MotionEvent.ACTION_UP,
+        x,
+        y,
+        metaState
+    );
+    view.dispatchTouchEvent(me);
     }
 
     @TargetApi(Build.VERSION_CODES.O)

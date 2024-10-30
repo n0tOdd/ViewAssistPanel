@@ -23,12 +23,15 @@ buildscript {
         gradlePluginPortal()
         mavenCentral()
     }
+
+
     dependencies {
         classpath 'com.android.tools.build:gradle:7.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'
         classpath 'com.google.gms:google-services:4.4.2'
         classpath 'gradle.plugin.com.github.sgtsilvio.gradle:android-retrofix:0.4.1'
+
     }
 }
 
@@ -37,6 +40,8 @@ allprojects {
         google()
         gradlePluginPortal()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
+
     }
 }
 
